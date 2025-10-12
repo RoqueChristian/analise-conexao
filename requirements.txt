@@ -1,0 +1,6 @@
+pandas
+numpy
+python-dotenv
+oracledb
+psycopg2-binary
+streamlit

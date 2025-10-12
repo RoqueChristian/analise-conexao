@@ -1,0 +1,17 @@
+# Arquivos de ambiente virtual
+venv/
+*.venv/
+
+.env
+.DS_Store # (Para usuários de macOS)
+
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+*.log
+
+
+.streamlit/
