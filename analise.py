@@ -388,6 +388,34 @@ def main():
     else:
         st.info("Nenhum fornecedor encontrado.")
 
+    # ==============================
+    # 7. CONEXÃO 2025 - CLIENTES FATURADOS
+    # ==============================
+    st.header("7. Conexão 2025 - Clientes Faturados")
+
+    arquivo_novo = 'conexao_2025_clientes fat.xlsx'
+
+    try:
+        df_novo = pd.read_excel(arquivo_novo)
+        colunas_desejadas = ['COD', 'RAZÃO', 'TOTAL_GASTO', 'TOTAL FATURADO']
+
+        # Verifica se as colunas existem na planilha antes de exibir
+        if set(colunas_desejadas).issubset(df_novo.columns):
+            df_exibicao = df_novo[colunas_desejadas].copy()
+            
+            for col in ['TOTAL_GASTO', 'TOTAL FATURADO']:
+                df_exibicao[col] = df_exibicao[col].apply(formatar_moeda)
+
+            st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
+        else:
+            st.warning(f"As colunas {colunas_desejadas} não foram encontradas no arquivo.")
+            st.write("Colunas disponíveis:", list(df_novo.columns))
+
+    except FileNotFoundError:
+        st.info(f"Arquivo '{arquivo_novo}' não encontrado. Adicione-o à pasta para visualizar.")
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo '{arquivo_novo}': {e}")
+
 
 if __name__ == "__main__":
     main()
