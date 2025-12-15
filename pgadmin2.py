@@ -11,10 +11,11 @@ load_dotenv()
 sql_d_conexao = """
     SELECT
         f.nome_fantasia AS fornecedor_nome,
-        f.cnpj AS fornecedor_cnpj,
+        f.id AS fornecedor_cnpj,
         c.nome_fantasia AS cliente_nome,
-        c.cnpj AS cliente_cnpj,
-    
+        c.cod_cli_princ AS cliente_cnpj,
+        c.estado as estado,
+
         SUM(p.valor_total) AS total_valor_pedido,
         COUNT(p.num_ped) AS total_pedidos_qtd
 
@@ -26,9 +27,10 @@ sql_d_conexao = """
         cliente c ON c.id = p.cliente_id
     GROUP BY
         f.nome_fantasia,
-        f.cnpj,
+        f.id,
         c.nome_fantasia,
-        c.cnpj
+        c.cod_cli_princ,
+        c.estado
 """
 
 csv_pedidos_compra = 'dados_pedidos.csv'
