@@ -4,3 +4,4 @@ python-dotenv
 oracledb
 psycopg2-binary
 streamlit
+openpyxl
