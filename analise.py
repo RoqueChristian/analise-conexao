@@ -397,13 +397,38 @@ def main():
 
     try:
         df_novo = pd.read_excel(arquivo_novo)
-        colunas_desejadas = ['COD', 'RAZÃO', 'TOTAL_GASTO', 'TOTAL FATURADO']
+        colunas_desejadas = ['ESTADO','COD', 'RAZAO', 'TOTAL_GASTO', 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         # Verifica se as colunas existem na planilha antes de exibir
         if set(colunas_desejadas).issubset(df_novo.columns):
-            df_exibicao = df_novo[colunas_desejadas].copy()
-            
-            for col in ['TOTAL_GASTO', 'TOTAL FATURADO']:
+
+            # --- INÍCIO DO FILTRO DE ESTADO ---
+            if 'ESTADO' in df_novo.columns:
+                # 1. Obter estados únicos, ordenar e adicionar a opção 'Todos'
+                estados_unicos = ['Todos'] + sorted(df_novo['ESTADO'].dropna().unique().tolist())
+
+                # 2. Criar o seletor de estado (filtro)
+                estado_selecionado = st.selectbox(
+                    '**Filtrar por Estado:**',
+                    estados_unicos,
+                    index=0 # 'Todos' como valor inicial
+                )
+
+                # 3. Aplicar o filtro
+                df_filtrado = df_novo.copy()
+                if estado_selecionado != 'Todos':
+                    df_filtrado = df_filtrado[df_filtrado['ESTADO'] == estado_selecionado]
+            else:
+                # Se a coluna ESTADO não existir (embora esteja em colunas_desejadas)
+                df_filtrado = df_novo.copy()
+                st.warning("A coluna 'ESTADO' não está presente no arquivo para aplicar o filtro.")
+            # --- FIM DO FILTRO DE ESTADO ---
+
+            # Usa o DataFrame FILTRADO para exibição
+            df_exibicao = df_filtrado[colunas_desejadas].copy()
+
+            for col in ['TOTAL_GASTO']:
+                # A função 'formatar_moeda' é mantida
                 df_exibicao[col] = df_exibicao[col].apply(formatar_moeda)
 
             st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
