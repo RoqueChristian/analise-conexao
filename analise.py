@@ -24,18 +24,15 @@ COLUNA_ESTADO = 'ESTADO'
 # ==============================
 
 def limpar_cnpj(cnpj_series):
-
     cnpj_series = cnpj_series.astype(str).fillna('')
     cnpj_series = cnpj_series.str.replace(r'\.0$', '', regex=True)
     return cnpj_series.str.replace(r'\D', '', regex=True)
-
 
 @st.cache_data
 def carregar_dados_brutos():
     df_empty = pd.DataFrame()
     
     try:
-
         df_conexao = pd.read_csv(FILE_CONEXAO, sep=';', decimal=',', encoding='utf-8-sig')
         df_conexao.columns = df_conexao.columns.str.upper()
 
@@ -48,7 +45,6 @@ def carregar_dados_brutos():
             'CNPJ_FORNECEDOR': 'FORNECEDOR_CNPJ_FATURADO', 
             'CODFILIAL': 'CODFILIAL_FATURAMENTO'
         }, errors='ignore')
-
 
         df_pedidos = pd.read_csv(FILE_PEDIDOS, sep=';', decimal='.', encoding='utf-8')
         df_pedidos.columns = df_pedidos.columns.str.upper()
@@ -67,9 +63,6 @@ def carregar_dados_brutos():
         st.error(f"⚠️ Erro: Um ou ambos os arquivos ({FILE_CONEXAO}, {FILE_PEDIDOS}) não foram encontrados.")
         return df_empty, df_empty
 
-
-    
-
     df_conexao['CLIENTE_CNPJ_LIMPO'] = limpar_cnpj(df_conexao['CLIENTE_CNPJ_BASE'])
     df_pedidos['CLIENTE_CNPJ_LIMPO'] = limpar_cnpj(df_pedidos['CLIENTE_CNPJ_BASE'])
 
@@ -79,7 +72,6 @@ def carregar_dados_brutos():
     df_pedidos['FORNECEDOR_CNPJ_LIMPO'] = limpar_cnpj(
         df_pedidos.get('FORNECEDOR_CNPJ_PEDIDO', df_pedidos.get('FORNECEDOR_NOME_PEDIDO'))
     )
-    
 
     if 'CODFILIAL_FATURAMENTO' not in df_conexao.columns and 'CODFILIAL' in df_conexao.columns:
         df_conexao['CODFILIAL_FATURAMENTO'] = df_conexao['CODFILIAL']
@@ -88,14 +80,10 @@ def carregar_dados_brutos():
     
     return df_conexao, df_pedidos
 
-
 def calcular_metricas_agregadas(df_conexao: pd.DataFrame, df_pedidos: pd.DataFrame, coluna_estado: str = 'ESTADO'):
-
-    
     df_empty = pd.DataFrame()
     if df_conexao.empty and df_pedidos.empty:
         return df_empty, df_empty, df_empty, df_empty
-
 
     df_conexao_agg_cliente = df_conexao.groupby('CLIENTE_CNPJ_LIMPO').agg({
         'CLIENTE_NOME_FATURADO': 'first',
@@ -175,13 +163,11 @@ def calcular_metricas_agregadas(df_conexao: pd.DataFrame, df_pedidos: pd.DataFra
     
     return df_analise_cliente, df_analise_fornecedor, df_analise_filial, df_analise_estado
 
-
 def formatar_moeda(valor):
     try:
         return locale.currency(valor, grouping=True)
     except:
         return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-
 
 # ==============================
 # INTERFACE STREAMLIT
@@ -196,15 +182,12 @@ def main():
     with col_titulo:
         st.markdown("## Análise de Resultados do Evento Conexão")
 
-
     df_conexao_bruto, df_pedidos_bruto = carregar_dados_brutos()
 
     if df_conexao_bruto.empty:
         st.warning("Não há dados suficientes para análise. Verifique os arquivos CSV.")
         return
 
-
-    
     df_conexao_filtrado = df_conexao_bruto.copy()
     df_pedidos_filtrado = df_pedidos_bruto.copy()
     estado_selecionado = 'Todos'
@@ -221,14 +204,10 @@ def main():
              
         if estado_selecionado != 'Todos':
             df_conexao_filtrado = df_conexao_bruto[df_conexao_bruto[COLUNA_ESTADO] == estado_selecionado].copy()
-            
-
             clientes_filtrados = df_conexao_filtrado['CLIENTE_CNPJ_LIMPO'].unique()
             df_pedidos_filtrado = df_pedidos_bruto[df_pedidos_bruto['CLIENTE_CNPJ_LIMPO'].isin(clientes_filtrados)].copy()
             
-    # ==============================
     # CÁLCULO DAS MÉTRICAS 
-    # ==============================
     df_analise_cliente, df_analise_fornecedor, df_analise_filial, df_analise_estado = \
         calcular_metricas_agregadas(df_conexao_filtrado, df_pedidos_filtrado, COLUNA_ESTADO)
     
@@ -236,9 +215,7 @@ def main():
         st.info(f"Nenhum dado encontrado para o Estado: **{estado_selecionado}**.")
         return
 
-    # ==============================
     # 1. VISÃO GERAL
-    # ==============================
     if estado_selecionado == 'Todos':
         st.header(f"1. Visão Geral")
     else:
@@ -262,7 +239,6 @@ def main():
 
     with main_kpi_col:
         col_pedido, col_faturado, col_devolvido = st.columns(3)
-
         with col_pedido:
             st.metric("Valor Total de Pedidos", formatar_moeda(total_pedido))
         with col_faturado:
@@ -271,7 +247,6 @@ def main():
             st.metric("Valor Total Devolvido", formatar_moeda(total_devolvido))
 
         st.markdown("##")
-
         col_diferenca, col_clientes = st.columns(2)
         with col_diferenca:
             delta_color = "normal" if total_diferenca < 0 else "inverse"
@@ -282,25 +257,20 @@ def main():
                 delta_color=delta_color
             )
         with col_clientes:
-            
             st.metric("Clientes Únicos", TOTAL_CLIENTES_PRESENTES)
 
     with main_kpi_tabela_col:
         st.subheader("Cargos - Cliente")
         st.table(dados_clientes_cargos)
 
-    # ==============================
     # 2. TOP PERFORMANCE
-    # ==============================
     st.header("2. Análise de Top Performance (Evento)")
-
     col_top_clientes, col_top_fornecedores = st.columns(2)
-
 
     with col_top_clientes:
         st.subheader("Clientes - Top 10 por Receita Líquida")
         df_top_clientes = df_analise_cliente[df_analise_cliente['VALOR_LIQUIDO_FATURADO'] > 0] \
-            .sort_values(by='VALOR_LIQUIDO_FATURADO', ascending=False).head(10).copy()
+            .sort_values(by='VALOR_LIquido_FATURADO', ascending=False).head(10).copy()
 
         if not df_top_clientes.empty:
             df_top_clientes_display = df_top_clientes[['CLIENTE', 'VALOR_LIQUIDO_FATURADO']].copy()
@@ -309,7 +279,6 @@ def main():
             st.dataframe(df_top_clientes_display, hide_index=True, use_container_width=True)
         else:
             st.info("Nenhum cliente com Receita Líquida positiva encontrado.")
-
 
     with col_top_fornecedores:
         st.subheader("Fornecedores - Top 10 por Faturamento")
@@ -324,11 +293,8 @@ def main():
         else:
             st.info("Nenhum fornecedor com Faturamento positivo encontrado.")
 
-    # ==============================
     # 3. ANÁLISE POR FILIAL 
-    # ==============================
     st.header("3. Análise de Desempenho por Filial")
-
     if not df_analise_filial.empty:
         df_display_filial = df_analise_filial.sort_values(by='VALOR_LIQUIDO_FATURADO', ascending=False).copy()
         cols_to_display_filial = ['FILIAL', 'VALOR_FATURADO', 'VALOR_DEVOLVIDO', 'VALOR_LIQUIDO_FATURADO']
@@ -338,12 +304,8 @@ def main():
     else:
         st.info("Nenhuma filial encontrada para análise.")
 
-    #===============================
     # 4. ANÁLISE POR ESTADO 
-    #===============================
-
     st.header('4. Análise por Estado')
-
     if not df_analise_estado.empty:
         df_display_estado = df_analise_estado.sort_values(by='VALOR_LIQUIDO_FATURADO', ascending=False).copy()
         cols_to_display_estado = ['ESTADO', 'VALOR_FATURADO', 'VALOR_DEVOLVIDO', 'VALOR_LIQUIDO_FATURADO']
@@ -351,13 +313,10 @@ def main():
             df_display_estado[col] = df_display_estado[col].apply(formatar_moeda)
         st.dataframe(df_display_estado[cols_to_display_estado], use_container_width=True, hide_index=True)
     else:
-        st.info('Nenhuma Estado encontrado para análise.')
+        st.info('Nenhum Estado encontrado para análise.')
 
-    # ==============================
     # 5. TABELA DETALHADA POR CLIENTE
-    # ==============================
     st.header("5. Tabela Detalhada por Cliente")
-
     if not df_analise_cliente.empty:
         df_display_cliente = df_analise_cliente.sort_values(by='DIFERENCA_FLUXO', ascending=False).copy()
         cols = ['CLIENTE', 'CLIENTE_CNPJ_LIMPO', 'VALOR_PEDIDO', 'VALOR_FATURADO',
@@ -368,14 +327,9 @@ def main():
         display_cols = dict(zip(cols, ['Cliente', 'CNPJ', 'Valor Pedido', 'Valor Faturado', 'Valor Devolvido', 'Diferença Fluxo', 'Receita Líquida']))
         df_display_cliente_final = df_display_cliente[cols].rename(columns=display_cols)
         st.dataframe(df_display_cliente_final, use_container_width=True)
-    else:
-        st.info("Nenhum cliente encontrado.")
 
-    # ==============================
     # 6. TABELA DETALHADA POR FORNECEDOR 
-    # ==============================
     st.header("6. Tabela Detalhada por Fornecedor")
-
     if not df_analise_fornecedor.empty:
         df_display_fornecedor = df_analise_fornecedor.sort_values(by='DIFERENCA_FLUXO', ascending=False).copy()
         cols = ['FORNECEDOR', 'FORNECEDOR_CNPJ_LIMPO', 'VALOR_PEDIDO', 'VALOR_FATURADO', 'VALOR_DEVOLVIDO', 'DIFERENCA_FLUXO']
@@ -385,8 +339,6 @@ def main():
         display_cols_forn = dict(zip(cols, ['Fornecedor', 'CNPJ', 'Valor Pedido', 'Valor Faturado', 'Valor Devolvido', 'Diferença Fluxo']))
         df_display_fornecedor_final = df_display_fornecedor[cols].rename(columns=display_cols_forn)
         st.dataframe(df_display_fornecedor_final, use_container_width=True)
-    else:
-        st.info("Nenhum fornecedor encontrado.")
 
     # ==============================
     # 7. CONEXÃO 2025 - CLIENTES FATURADOS
@@ -399,37 +351,32 @@ def main():
         df_novo = pd.read_excel(arquivo_novo)
         colunas_desejadas = ['ESTADO','COD', 'RAZAO', 'TOTAL_GASTO', 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-        # Verifica se as colunas existem na planilha antes de exibir
         if set(colunas_desejadas).issubset(df_novo.columns):
-
-            # --- INÍCIO DO FILTRO DE ESTADO ---
             if 'ESTADO' in df_novo.columns:
-                # 1. Obter estados únicos, ordenar e adicionar a opção 'Todos'
                 estados_unicos = ['Todos'] + sorted(df_novo['ESTADO'].dropna().unique().tolist())
-
-                # 2. Criar o seletor de estado (filtro)
-                estado_selecionado = st.selectbox(
+                estado_selecionado_novo = st.selectbox(
                     '**Filtrar por Estado:**',
                     estados_unicos,
-                    index=0 # 'Todos' como valor inicial
+                    index=0,
+                    key='filtro_estado_novo'
                 )
 
-                # 3. Aplicar o filtro
                 df_filtrado = df_novo.copy()
-                if estado_selecionado != 'Todos':
-                    df_filtrado = df_filtrado[df_filtrado['ESTADO'] == estado_selecionado]
+                if estado_selecionado_novo != 'Todos':
+                    df_filtrado = df_filtrado[df_filtrado['ESTADO'] == estado_selecionado_novo]
             else:
-                # Se a coluna ESTADO não existir (embora esteja em colunas_desejadas)
                 df_filtrado = df_novo.copy()
                 st.warning("A coluna 'ESTADO' não está presente no arquivo para aplicar o filtro.")
-            # --- FIM DO FILTRO DE ESTADO ---
 
-            # Usa o DataFrame FILTRADO para exibição
             df_exibicao = df_filtrado[colunas_desejadas].copy()
 
-            for col in ['TOTAL_GASTO']:
-                # A função 'formatar_moeda' é mantida
-                df_exibicao[col] = df_exibicao[col].apply(formatar_moeda)
+            # --- APLICAÇÃO DA FORMATAÇÃO DE MOEDA ---
+            # Define as colunas numéricas que devem ser formatadas
+            colunas_para_formatar = ['TOTAL_GASTO', 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            
+            for col in colunas_para_formatar:
+                if col in df_exibicao.columns:
+                    df_exibicao[col] = df_exibicao[col].apply(formatar_moeda)
 
             st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
         else:
@@ -440,7 +387,6 @@ def main():
         st.info(f"Arquivo '{arquivo_novo}' não encontrado. Adicione-o à pasta para visualizar.")
     except Exception as e:
         st.error(f"Erro ao ler o arquivo '{arquivo_novo}': {e}")
-
 
 if __name__ == "__main__":
     main()
